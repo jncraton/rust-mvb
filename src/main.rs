@@ -17,7 +17,10 @@ fn replace_with_file(needle: &str, filename: &str, haystack: String) -> String {
   let mut file = File::open(filename).unwrap();
   let mut content = String::new();
   file.read_to_string(&mut content).unwrap();
-  content = markdown::to_html(&content);
+
+  if filename.contains(".md") {
+    content = markdown::to_html(&content);
+  }
   
   return haystack.replace(needle, &content);
 }
@@ -36,6 +39,7 @@ impl Service for Echo {
                 file.read_to_string(&mut template).unwrap();
 
                 template = replace_with_file("{{ content }}", "pages/content.md", template);
+                template = replace_with_file("{{ style }}", "style.css", template);
 
                 Response::new()
                     .with_header(ContentLength(template.len() as u64))
