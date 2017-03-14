@@ -22,14 +22,20 @@ impl Service for Echo {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match (req.method(), req.path()) {
             (&Get, "/") | (&Get, "/echo") => {
-                let mut file = File::open("pages/content.md").unwrap();
+                let mut file = File::open("template.html").unwrap();
+                let mut template = String::new();
+                file.read_to_string(&mut template).unwrap();
+
+                file = File::open("pages/content.md").unwrap();
                 let mut content = String::new();
                 file.read_to_string(&mut content).unwrap();
-                let html : String = markdown::to_html(&content);
+                content = markdown::to_html(&content);
+
+                template = template.replace("{{ content }}", &content);
 
                 Response::new()
-                    .with_header(ContentLength(html.len() as u64))
-                    .with_body(html)
+                    .with_header(ContentLength(template.len() as u64))
+                    .with_body(template)
             },
             (&Post, "/echo") => {
                 let mut res = Response::new();
