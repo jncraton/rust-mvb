@@ -6,7 +6,8 @@ use hyper::{Get, Post, StatusCode};
 use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
-static INDEX: &'static [u8] = b"Try POST /echo";
+use std::io::prelude::*;
+use std::fs::File;
 
 #[derive(Clone, Copy)]
 struct Echo;
@@ -20,9 +21,13 @@ impl Service for Echo {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match (req.method(), req.path()) {
             (&Get, "/") | (&Get, "/echo") => {
+                let mut file = File::open("pages/content.md").unwrap();
+                let mut content = String::new();
+                file.read_to_string(&mut content).unwrap();
+
                 Response::new()
-                    .with_header(ContentLength(INDEX.len() as u64))
-                    .with_body(INDEX)
+                    .with_header(ContentLength(content.len() as u64))
+                    .with_body(content)
             },
             (&Post, "/echo") => {
                 let mut res = Response::new();
