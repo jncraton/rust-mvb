@@ -11,4 +11,4 @@ Example pages are provided demonstating the available functionality.
 
 ### Q. This is written in rust, so it must be very fast, right?
 
-Nope. This is actually quite slow. While rust as a language certainly has the potential to be fast, I've made no attempt to make this spectacularly quick. It serves static content, so I'm counting on a web server in front of this caching the hot pages.
+Nope. This currently runs at about 50 requests/sec on my machine. While rust as a language certainly has the potential to be fast, I've made no attempt to make this spectacularly quick. It serves mostly static content, so I'm counting on a web server in front of this caching the hot pages.
