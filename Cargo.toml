@@ -3,6 +3,7 @@ name = "rust-mvb"
 version = "1.0.0"
 
 [dependencies]
+markdown = "0.2"
 hyper = { git = "https://github.com/hyperium/hyper" }
 futures = "*"
 tokio-core = "*"

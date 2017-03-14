@@ -1,5 +1,6 @@
 extern crate futures;
 extern crate hyper;
+extern crate markdown;
 use futures::future::FutureResult;
 
 use hyper::{Get, Post, StatusCode};
@@ -24,10 +25,11 @@ impl Service for Echo {
                 let mut file = File::open("pages/content.md").unwrap();
                 let mut content = String::new();
                 file.read_to_string(&mut content).unwrap();
+                let html : String = markdown::to_html(&content);
 
                 Response::new()
-                    .with_header(ContentLength(content.len() as u64))
-                    .with_body(content)
+                    .with_header(ContentLength(html.len() as u64))
+                    .with_body(html)
             },
             (&Post, "/echo") => {
                 let mut res = Response::new();
