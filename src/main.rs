@@ -13,6 +13,15 @@ use std::fs::File;
 #[derive(Clone, Copy)]
 struct Echo;
 
+fn replace_with_file(needle: &str, filename: &str, haystack: String) -> String {
+  let mut file = File::open(filename).unwrap();
+  let mut content = String::new();
+  file.read_to_string(&mut content).unwrap();
+  content = markdown::to_html(&content);
+  
+  return haystack.replace(needle, &content);
+}
+
 impl Service for Echo {
     type Request = Request;
     type Response = Response;
@@ -26,12 +35,7 @@ impl Service for Echo {
                 let mut template = String::new();
                 file.read_to_string(&mut template).unwrap();
 
-                file = File::open("pages/content.md").unwrap();
-                let mut content = String::new();
-                file.read_to_string(&mut content).unwrap();
-                content = markdown::to_html(&content);
-
-                template = template.replace("{{ content }}", &content);
+                template = replace_with_file("{{ content }}", "pages/content.md", template);
 
                 Response::new()
                     .with_header(ContentLength(template.len() as u64))
