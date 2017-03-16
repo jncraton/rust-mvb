@@ -9,6 +9,7 @@ use hyper::server::{Http, Service, Request, Response};
 
 use std::io::prelude::*;
 use std::fs::File;
+use std::path::Path;
 
 #[derive(Clone, Copy)]
 struct Server;
@@ -25,17 +26,25 @@ fn replace_with_file(needle: &str, filename: &str, haystack: String) -> String {
   return haystack.replace(needle, &content);
 }
 
-fn get_canonical_path(path: &str) -> String {
+fn get_canonical_path(path: &str) -> Option<String> {
   let components = path.split('/');
 
   let mut canonical = String::new();
+  let mut local_path = String::from("pages");
 
   for component in components.skip(1) {
+      local_path += "/";
+      local_path += component;
+
+      if !Path::new(&local_path).exists() {
+        return None;
+      }
+
       canonical += "/";
       canonical += component;
   }
 
-  return canonical;
+  return Some(canonical);
 }
 
 #[test]
@@ -56,7 +65,7 @@ impl Service for Server {
 
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok({
-            let canonical_path = get_canonical_path(req.path());
+            let canonical_path = get_canonical_path(req.path()).unwrap();
             println!("Canonical path: {}\n", canonical_path);
 
             let mut file = File::open("template.html").unwrap();
