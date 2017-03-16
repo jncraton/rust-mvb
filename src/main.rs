@@ -49,12 +49,12 @@ fn get_canonical_path(path: &str) -> Option<String> {
 
 #[test]
 fn get_canoncial_path_root() {
-  assert_eq!(get_canonical_path("/"), "/");
+  assert_eq!(get_canonical_path("/").unwrap(), "/");
 }
 
 #[test]
 fn get_canoncial_path_add_trailing() {
-  assert_eq!(get_canonical_path("/test"), "/test/");
+  assert_eq!(get_canonical_path("/test").unwrap(), "/test/");
 }
 
 impl Service for Server {
