@@ -3,7 +3,7 @@ extern crate hyper;
 extern crate markdown;
 use futures::future::FutureResult;
 
-use hyper::{Get, Post, StatusCode};
+//use hyper::{Get, Post, StatusCode};
 use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
@@ -25,6 +25,29 @@ fn replace_with_file(needle: &str, filename: &str, haystack: String) -> String {
   return haystack.replace(needle, &content);
 }
 
+fn get_canonical_path(path: &str) -> String {
+  let components = path.split('/');
+
+  let mut canonical = String::new();
+
+  for component in components.skip(1) {
+      canonical += "/";
+      canonical += component;
+  }
+
+  return canonical;
+}
+
+#[test]
+fn get_canoncial_path_root() {
+  assert_eq!(get_canonical_path("/"), "/");
+}
+
+#[test]
+fn get_canoncial_path_add_trailing() {
+  assert_eq!(get_canonical_path("/test"), "/test/");
+}
+
 impl Service for Server {
     type Request = Request;
     type Response = Response;
@@ -33,9 +56,12 @@ impl Service for Server {
 
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok({
-            // req.method() req.path()
+            let canonical_path = get_canonical_path(req.path());
+            println!("Canonical path: {}\n", canonical_path);
+
             let mut file = File::open("template.html").unwrap();
             let mut template = String::new();
+                        
             file.read_to_string(&mut template).unwrap();
 
             template = replace_with_file("{{ content }}", "pages/content.md", template);
