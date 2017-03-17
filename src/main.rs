@@ -54,35 +54,40 @@ fn get_canonical_path(path: &str) -> Option<String> {
 
   let mut canonical = String::new();
   let mut local_path = String::from("pages");
+  let mut skip_next = false;
 
   for component in components.skip(1) {
-    let new_path = format!("{}/{}", local_path, component);
-
-    println!("new:{} local:{} component:{}", new_path, local_path, component);
-
-    if Path::new(&new_path).exists() {
-      local_path = new_path;
-      canonical = format!("{}/{}", canonical, component);
-    } else {
-      let mut words = component.split("-");
-
-      let id : u32 = words.next().unwrap().parse().unwrap_or(0);
-
-      if id == 0 {
+    if !skip_next {
+      let new_path = format!("{}/{}", local_path, component);
+  
+      println!("new:{} local:{} component:{}", new_path, local_path, component);
+  
+      if Path::new(&new_path).exists() {
+        local_path = new_path;
+        canonical = format!("{}/{}", canonical, component);
+      } else {
+        let mut words = component.split("-");
+  
+        let id : u32 = words.next().unwrap().parse().unwrap_or(0);
+  
+        if id == 0 {
+          return None;
+        }
+  
+        let slug = get_slug_for_id(&local_path, id).unwrap_or(String::from("None"));
+  
+        local_path = format!("{}/{}-{}", local_path, id, slug);
+        canonical = format!("{}/{}/{}", canonical, id, slug);
+        
+        println!("local: {} canon: {}", local_path, canonical);
+        skip_next = true;
+      }
+  
+      if !Path::new(&local_path).exists() {
         return None;
       }
-
-      let slug = get_slug_for_id(&local_path, id).unwrap_or(String::from("None"));
-
-      local_path = format!("{}/{}-{}", local_path, id, slug);
-      canonical = format!("{}/{}/{}", canonical, id, slug);
-      
-      println!("local: {} canon: {}", local_path, canonical);
-      break;
-    }
-
-    if !Path::new(&local_path).exists() {
-      return None;
+    } else {
+      skip_next = false;
     }
   }
 
