@@ -91,8 +91,21 @@ fn get_canonical_path(path: &str) -> Result<(String, String), i32> {
     }
   }
 
-  if !canonical.contains(".") && !canonical.ends_with("/") {
-    canonical = format!("{}/", canonical);
+  if !canonical.contains(".") {
+    if !canonical.ends_with("/") {
+      canonical = format!("{}/", canonical);
+    }
+
+    let md_path = format!("{}/content.md", local_path);
+    let html_path = format!("{}/content.html", local_path);
+    
+    if Path::new(&md_path).exists() {
+      local_path = md_path;
+    } else if Path::new(&html_path).exists() {
+      local_path = html_path;
+    } else {
+      return Err(-3);
+    }
   }
     
   return Ok((canonical, local_path));
