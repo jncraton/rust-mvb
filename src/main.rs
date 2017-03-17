@@ -27,19 +27,22 @@ fn replace_with_file(needle: &str, filename: &str, haystack: String) -> String {
   return haystack.replace(needle, &content);
 }
 
-fn get_path_by_id(root: &str, id: u32) -> Option<String> {
+fn get_slug_for_id(root: &str, id: u32) -> Option<String> {
   let paths = fs::read_dir(root).unwrap();
 
   for path in paths {
     let os_path = path.unwrap().file_name();
     let filename =  os_path.to_str().unwrap();
-    let first_word = filename.split("-").next().unwrap();
+    let mut words = filename.split("-");
+    let first_word = words.next().unwrap();
     let file_id : u32 = first_word.parse().unwrap_or(0);
 
     println!("file_id: {} filename: {} first_word: {}", file_id, filename, first_word);
 
     if file_id != 0 && file_id == id {
-      return Some(format!("{}/{}", root, filename));
+      let slug = &filename[first_word.len() + 1..];
+    
+      return Some(String::from(slug));
     }
   }
 
@@ -67,14 +70,9 @@ fn get_canonical_path(path: &str) -> Option<String> {
         return None;
       }
 
-      local_path = get_path_by_id(&local_path, id).unwrap_or(String::from("None"));
+      let slug = get_slug_for_id(&local_path, id).unwrap_or(String::from("None"));
 
-      let mut slug = String::new();
-
-      for word in words {
-        slug = format!("{}-{}", slug, word);
-      }
-      
+      local_path = format!("{}/{}-{}", local_path, id, slug);
       canonical = format!("{}/{}/{}", canonical, id, slug);
 
       println!("local: {} canon: {}", local_path, canonical);
