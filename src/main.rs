@@ -49,7 +49,7 @@ fn get_slug_for_id(root: &str, id: u32) -> Option<String> {
   return None;
 }
 
-fn get_canonical_path(path: &str) -> Option<String> {
+fn get_canonical_path(path: &str) -> Result<(String, String), i32> {
   let components = path.split('/');
 
   let mut canonical = String::new();
@@ -71,7 +71,7 @@ fn get_canonical_path(path: &str) -> Option<String> {
         let id : u32 = words.next().unwrap().parse().unwrap_or(0);
   
         if id == 0 {
-          return None;
+          return Err(-1);
         }
   
         let slug = get_slug_for_id(&local_path, id).unwrap_or(String::from("None"));
@@ -84,7 +84,7 @@ fn get_canonical_path(path: &str) -> Option<String> {
       }
   
       if !Path::new(&local_path).exists() {
-        return None;
+        return Err(-2);
       }
     } else {
       skip_next = false;
@@ -95,7 +95,7 @@ fn get_canonical_path(path: &str) -> Option<String> {
     canonical = format!("{}/", canonical);
   }
     
-  return Some(canonical);
+  return Ok((canonical, local_path));
 }
 
 #[test]
@@ -108,6 +108,18 @@ fn get_canoncial_path_add_trailing() {
   assert_eq!(get_canonical_path("/test").unwrap(), "/test/");
 }
 
+fn parse_file(filename: &str) -> String {
+  let mut file = File::open("template.html").unwrap();
+  let mut template = String::new();
+              
+  file.read_to_string(&mut template).unwrap();
+
+  template = replace_with_file("{{ content }}", filename, template);
+  template = replace_with_file("{{ style }}", "style.css", template);
+
+  return template;
+}
+
 impl Service for Server {
     type Request = Request;
     type Response = Response;
@@ -116,29 +128,24 @@ impl Service for Server {
 
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok({
-            let canonical_path = get_canonical_path(req.path()).unwrap_or(String::new());
+            let (canonical_path, local_path) = get_canonical_path(req.path()).unwrap_or((String::new(), String::new()));
+
             println!("Canonical path: {}\n", canonical_path);
 
             if canonical_path == "" {
               Response::new()
-                .with_status(StatusCode::NotFound)
-                .with_body("Not Found")            
+                .with_status(StatusCode::NotFound)            
+                .with_body("Not Found")              
             } else if canonical_path != req.path() {
               Response::new()
                 .with_status(StatusCode::MovedPermanently)
                 .with_header(Location(canonical_path))
             } else {
-              let mut file = File::open("template.html").unwrap();
-              let mut template = String::new();
-                          
-              file.read_to_string(&mut template).unwrap();
-  
-              template = replace_with_file("{{ content }}", "pages/content.md", template);
-              template = replace_with_file("{{ style }}", "style.css", template);
+              let content = parse_file(&local_path);
               
               Response::new()
-                  .with_header(ContentLength(template.len() as u64))
-                  .with_body(template)
+                  .with_header(ContentLength(content.len() as u64))
+                  .with_body(content)
             }
         })
     }
