@@ -91,6 +91,10 @@ fn get_canonical_path(path: &str) -> Option<String> {
     }
   }
 
+  if !canonical.contains(".") && !canonical.ends_with("/") {
+    canonical = format!("{}/", canonical);
+  }
+    
   return Some(canonical);
 }
 
