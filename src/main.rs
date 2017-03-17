@@ -3,7 +3,7 @@ extern crate hyper;
 extern crate markdown;
 use futures::future::FutureResult;
 
-//use hyper::{Get, Post, StatusCode};
+use hyper::{StatusCode};
 use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
@@ -107,18 +107,23 @@ impl Service for Server {
             let canonical_path = get_canonical_path(req.path()).unwrap_or(String::new());
             println!("Canonical path: {}\n", canonical_path);
 
-            let mut file = File::open("template.html").unwrap();
-            let mut template = String::new();
-                        
-            file.read_to_string(&mut template).unwrap();
-
-            template = replace_with_file("{{ content }}", "pages/content.md", template);
-            template = replace_with_file("{{ style }}", "style.css", template);
-
-            Response::new()
-                .with_header(ContentLength(template.len() as u64))
-                .with_body(template)
-            //Response::new().with_status(StatusCode::NotFound)
+            if canonical_path != req.path() {
+              Response::new()
+                .with_status(StatusCode::NotFound)
+                .with_body("Not Found")
+            } else {
+              let mut file = File::open("template.html").unwrap();
+              let mut template = String::new();
+                          
+              file.read_to_string(&mut template).unwrap();
+  
+              template = replace_with_file("{{ content }}", "pages/content.md", template);
+              template = replace_with_file("{{ style }}", "style.css", template);
+              
+              Response::new()
+                  .with_header(ContentLength(template.len() as u64))
+                  .with_body(template)
+            }
         })
     }
 
