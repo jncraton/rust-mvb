@@ -4,7 +4,7 @@ extern crate markdown;
 use futures::future::FutureResult;
 
 use hyper::{StatusCode};
-use hyper::header::ContentLength;
+use hyper::header::{ContentLength, Location};
 use hyper::server::{Http, Service, Request, Response};
 
 use std::io::prelude::*;
@@ -58,6 +58,8 @@ fn get_canonical_path(path: &str) -> Option<String> {
   for component in components.skip(1) {
     let new_path = format!("{}/{}", local_path, component);
 
+    println!("new:{} local:{} component:{}", new_path, local_path, component);
+
     if Path::new(&new_path).exists() {
       local_path = new_path;
       canonical = format!("{}/{}", canonical, component);
@@ -74,8 +76,9 @@ fn get_canonical_path(path: &str) -> Option<String> {
 
       local_path = format!("{}/{}-{}", local_path, id, slug);
       canonical = format!("{}/{}/{}", canonical, id, slug);
-
+      
       println!("local: {} canon: {}", local_path, canonical);
+      break;
     }
 
     if !Path::new(&local_path).exists() {
@@ -107,10 +110,14 @@ impl Service for Server {
             let canonical_path = get_canonical_path(req.path()).unwrap_or(String::new());
             println!("Canonical path: {}\n", canonical_path);
 
-            if canonical_path != req.path() {
+            if canonical_path == "" {
               Response::new()
                 .with_status(StatusCode::NotFound)
-                .with_body("Not Found")
+                .with_body("Not Found")            
+            } else if canonical_path != req.path() {
+              Response::new()
+                .with_status(StatusCode::MovedPermanently)
+                .with_header(Location(canonical_path))
             } else {
               let mut file = File::open("template.html").unwrap();
               let mut template = String::new();
